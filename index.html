@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<!--[if IE 8]> 				 <html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+
+<head>
+	<meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>BTC ticker</title>
+  <link rel="stylesheet" href="css/normalize.css" />
+  <link rel="stylesheet" href="css/foundation.css" />
+  <!-- <link rel="stylesheet" href="http://www.flotcharts.org/flot/examples/examples.css" /> -->
+</head>
+<body>
+
+	<div class="row">
+		<div class="large-12 columns">
+			<h2>BTC ticker</h2>
+			<p>powered by websockets and greed \o/</p>
+			<hr />
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="large-12 columns chart" style="display:inline-block;height:500px;width700px">
+		</div>
+  </div>
+
+	<div class="row">
+		<div class="large-4 columns">
+			<h2>Time</h2>
+		</div>
+
+    <!-- <div class="large&#45;3 columns"> -->
+    <!--   <h2>Type</h2> -->
+    <!-- </div> -->
+
+    <div class="large-4 columns">
+			<h2>Price</h2>
+		</div>
+
+    <div class="large-4 columns">
+			<h2>Volume</h2>
+		</div>
+  </div>
+
+
+  <div class="row">
+		<div class="large-4 columns time">
+		</div>
+
+    <div class="large-4 columns price">
+		</div>
+
+    <div class="large-4 columns volume">
+		</div>
+	</div>
+
+  <script src="js/vendor/jquery.js"></script>
+  <script src="js/vendor/custom.modernizr.js"></script>
+  <script src="js/foundation.min.js"></script>
+  <script src="components/flot/jquery.flot.js"></script>
+
+  <!--
+  <script src="js/foundation/foundation.js"></script>
+  <script src="js/foundation/foundation.alerts.js"></script>
+  <script src="js/foundation/foundation.clearing.js"></script>
+  <script src="js/foundation/foundation.cookie.js"></script>
+  <script src="js/foundation/foundation.dropdown.js"></script>
+  <script src="js/foundation/foundation.forms.js"></script>
+  <script src="js/foundation/foundation.joyride.js"></script>
+  <script src="js/foundation/foundation.magellan.js"></script>
+  <script src="js/foundation/foundation.orbit.js"></script>
+  <script src="js/foundation/foundation.placeholder.js"></script>
+  <script src="js/foundation/foundation.reveal.js"></script>
+  <script src="js/foundation/foundation.section.js"></script>
+  <script src="js/foundation/foundation.tooltips.js"></script>
+  <script src="js/foundation/foundation.topbar.js"></script>
+  -->
+  
+  <script>
+    $(document).foundation();
+      // var conn = io.connect('https://socketio.mtgox.com/mtgox?Currency=USD');
+      var connection = new WebSocket('ws://websocket.mtgox.com/mtgox');
+      var chart = $('.chart');
+      var data = [];
+      var totalPoints = 1000;
+
+      var updateInterval = 1000;
+
+      var options = {
+        series: {
+          shadowSize: 0	// Drawing is faster without shadows
+        },
+        yaxis: {
+          min: 50,
+          max: 170,
+          show: true,
+        },
+        xaxis: {
+          show: false
+        }
+      }
+
+      connection.onmessage = function() {
+        var mtgoxData = JSON.parse(event.data);
+        if (mtgoxData.depth.type_str === 'bid' && mtgoxData.depth.price > 0.05) {
+
+          $('.price').prepend(mtgoxData.depth.price + "<br />");
+          $('.volume').prepend(mtgoxData.depth.volume + "<br />");
+          $('.time').prepend(event.timeStamp + "<br />");
+
+          function getBtcData() {
+            if (data.length > 0) {
+              data = data.slice(1);
+            }
+            while (data.length < totalPoints) {
+              data.push(mtgoxData.depth.price)
+            }
+            var res = [];
+              for (var i = 0; i < data.length; ++i) {
+                res.push([i, data[i]])
+              }
+            return res;
+          }
+
+          var plot = $.plot(chart, [ getBtcData() ], options)
+
+          function update() {
+            plot.setData([getBtcData()]);
+            // Since the axes don't change, we don't need to call plot.setupGrid()
+            plot.draw();
+            setTimeout(update, updateInterval);
+          }
+          update();
+
+          // $('.type').prepend(mtgoxData.depth.type_str + "<br />");
+                  }
+      };
+  </script>
+</body>
+</html>

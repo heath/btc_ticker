@@ -1,0 +1,7 @@
+{
+  "name": "btc_ticker",
+  "version": "0.0.0",
+  "dependencies": {
+    "flot": "~0.8.0"
+  }
+}
